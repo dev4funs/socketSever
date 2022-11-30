@@ -25,7 +25,7 @@ io.on("connection", (socket) => {
     }
     socketToRoom[socket.id] = roomID;
     const usersInThisRoom = users[roomID].filter((id) => id !== socket.id);
-
+    console.log("join room", users, socketToRoom, roomID);
     socket.emit("all users", { usersInThisRoom, leader: leaders[roomID] });
   });
 
@@ -43,12 +43,25 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on("disconnect", () => {
+  socket.on("declareLeader", () => {
+    const roomID = socketToRoom[socket.id];
+    leaders[roomID] = socket.id;
+    console.log(socket.id, " is the new leader");
+  });
+
+  socket.on("destroy", () => {
     const roomID = socketToRoom[socket.id];
     let room = users[roomID];
-    if (room) {
-      room = room.filter((id) => id !== socket.id);
-      users[roomID] = room;
+    console.log("destroy", socket.id, roomID, users);
+    try {
+      if (room) {
+        const index = users[roomID].findIndex((item) => item === socket.id);
+        if (index !== -1) {
+          users[roomID].splice(index, 1);
+        }
+      }
+    } catch (error) {
+      console.log("destroy error", error);
     }
   });
 });
